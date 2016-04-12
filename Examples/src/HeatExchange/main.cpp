@@ -64,6 +64,19 @@ int main(int argc, char** argv)
   const auto& hc=param.hc; // Convection coefficient
   const auto&    M=param.M; // Number of grid elements
   const auto& output_file = param.output_file; // Output filename
+  const auto& norm_residual = param.norm_residual;
+  if (norm_residual != "L2" && norm_residual != "H1") {
+    std::cerr<<"ERROR: norm_residual must be either \"L2\" or \"H1\""<<std::endl;
+    status = 1;
+    return status;
+  }
+  bool H1_flag;
+  if (norm_residual == "H1") {
+    H1_flag = true;
+  }
+  else {
+    H1_flag = false;
+  }
   //! Precomputed coefficient for adimensional form of equation
   const auto act=2.*(a1+a2)*hc*L*L/(k*a1*a2);
 
@@ -103,6 +116,9 @@ int main(int argc, char** argv)
       f3 = (theta2new - theta2old);
       f2 = (f1 + f3)/2;
       epsilon += h*int_cavalieri_simpson(f1*f1, f2*f2, f3*f3);
+      if (H1_flag) {
+        epsilon += (f1 - f3)*(f1 - f3)/h;
+      }
       theta1old = theta[m];
       theta1new = xnew;
       theta2old = theta[m+1];

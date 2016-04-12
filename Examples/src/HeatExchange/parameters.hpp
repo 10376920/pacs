@@ -27,6 +27,7 @@ struct parameters
   //! Name of output file
   std::string output_file;
   //! Constructor takes default values
+  std::string norm_residual;
   parameters():
     itermax(1000000),
     toler(1e-8),
@@ -38,7 +39,8 @@ struct parameters
     k(0.164),
     hc(1.e-6*200.),
     M(100),
-    output_file("result.dat")
+    output_file("result.dat"),
+    norm_residual("L2")
   {}
 };
 //! Prints parameters
