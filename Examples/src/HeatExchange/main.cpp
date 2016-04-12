@@ -4,6 +4,7 @@
 #include <tuple>
 #include "readParameters.hpp"
 #include "GetPot.hpp"
+#include "integration.hpp"
 //#include "gnuplot-iostream.hpp"// interface with gnuplot
 /*!
   @file main.cpp
@@ -84,33 +85,48 @@ int main(int argc, char** argv)
   
   int iter=0;
   double xnew, epsilon;
-     do
-       { epsilon=0.;
+  double theta1old;
+  double theta2old;
+  double theta1new;
+  double theta2new;
+  double f1, f2, f3, df;
+  do {
+    epsilon=0.;
+    theta1old = theta[0];
+    theta2old = theta[1];
+    theta1new = theta[0];
+    // first M-1 row of linear system
+    for(int m=1;m < M;m++) {
+      xnew  = (theta[m-1]+theta[m+1])/(2.+h*h*act);
+      theta2new = xnew;
+      f1 = (theta1new - theta1old);
+      f3 = (theta2new - theta2old);
+      f2 = (f1 + f3)/2;
+      epsilon += h*int_cavalieri_simpson(f1*f1, f2*f2, f3*f3);
+      theta1old = theta[m];
+      theta1new = xnew;
+      theta2old = theta[m+1];
+      theta[m] = xnew;
+    }
+    //Last row
+    xnew = theta[M-1];
+    theta2new = xnew;
+    f1 = (theta1new - theta1old);
+    f3 = (theta2new - theta2old);
+    f2 = (f1 + f3)/2; 
+    epsilon += h*int_cavalieri_simpson(f1*f1, f2*f2, f3*f3);
+    theta[M]=  xnew; 
+    iter=iter+1;
+    //std::cout << epsilon << std::endl;
+ } while((sqrt(epsilon) > toler) && (iter < itermax) );
 
-	 // first M-1 row of linear system
-         for(int m=1;m < M;m++)
-         {   
-	   xnew  = (theta[m-1]+theta[m+1])/(2.+h*h*act);
-	   epsilon += (xnew-theta[m])*(xnew-theta[m]);
-	   theta[m] = xnew;
-         }
-
-	 //Last row
-	 xnew = theta[M-1]; 
-	 epsilon += (xnew-theta[M])*(xnew-theta[M]);
-	 theta[M]=  xnew; 
-
-	 iter=iter+1;     
-       }while((sqrt(epsilon) > toler) && (iter < itermax) );
-
-    if(iter<itermax)
-      cout << "M="<<M<<"  Convergence in "<<iter<<" iterations"<<endl;
-    else
-      {
-	cerr << "NOT CONVERGING in "<<itermax<<" iterations "<<
-	  "||dx||="<<sqrt(epsilon)<<endl;
-	status=1;
-      }
+ if(iter<itermax)
+   cout << "M="<<M<<"  Convergence in "<<iter<<" iterations"<<endl;
+ else {
+   cerr << "NOT CONVERGING in "<<itermax<<" iterations "<<
+          "||dx||="<<sqrt(epsilon)<<endl;
+   status=1;
+ }
 
  // Analitic solution
 
@@ -130,12 +146,12 @@ int main(int argc, char** argv)
      ofstream f(output_file);
      for(int m = 0; m<= M; m++)
        {
-	 // \t writes a tab 
+         // \t writes a tab 
          f<<m*h*L<<"\t"<<Te*(1.+theta[m])<<"\t"<<thetaa[m]<<endl;
-	 // An example of use of tie and tuples!
-         
-	 std::tie(coor[m],sol[m],exact[m])=
-	   std::make_tuple(m*h*L,Te*(1.+theta[m]),thetaa[m]);
+         // An example of use of tie and tuples!
+
+         std::tie(coor[m],sol[m],exact[m])=
+         std::make_tuple(m*h*L,Te*(1.+theta[m]),thetaa[m]);
        }
      // Using temporary files (another nice use of tie)
 //     gp<<"plot"<<gp.file1d(std::tie(coor,sol))<<
