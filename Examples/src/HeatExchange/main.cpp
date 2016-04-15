@@ -5,7 +5,7 @@
 #include "readParameters.hpp"
 #include "GetPot.hpp"
 #include "integration.hpp"
-//#include "gnuplot-iostream.hpp"// interface with gnuplot
+#include "gnuplot-iostream.hpp"// interface with gnuplot
 /*!
   @file main.cpp
   @brief Temperature distribution in a 1D bar.
@@ -153,7 +153,7 @@ int main(int argc, char** argv)
      // writing results with format
      // x_i u_h(x_i) u(x_i) and lauch gnuplot 
 
-//     Gnuplot gp;
+     Gnuplot gp;
      std::vector<double> coor(M+1);
      std::vector<double> sol(M+1);
      std::vector<double> exact(M+1);
@@ -170,9 +170,9 @@ int main(int argc, char** argv)
          std::make_tuple(m*h*L,Te*(1.+theta[m]),thetaa[m]);
        }
      // Using temporary files (another nice use of tie)
-//     gp<<"plot"<<gp.file1d(std::tie(coor,sol))<<
-//       "w lp title 'uh',"<< gp.file1d(std::tie(coor,exact))<<
-//       "w l title 'uex'"<<std::endl;
+     gp<<"plot"<<gp.file1d(std::tie(coor,sol))<<
+       "w lp title 'uh',"<< gp.file1d(std::tie(coor,exact))<<
+       "w l title 'uex'"<<std::endl;
      f.close();
      return status;
 }
