@@ -3,10 +3,6 @@
 #include <iosfwd>
 struct parameters
 {
-  //! max number of iteration for Gauss-Siedel
-  int   itermax;
-  //! Tolerance for stopping criterion
-  double  toler;
   //! Bar length
    double L;
   //! First longitudinal dimension
@@ -25,8 +21,6 @@ struct parameters
   int M;
   //! Constructor takes default values
   parameters():
-    itermax(1000000),
-    toler(1e-8),
     L(40.),
     a1(4.),
     a2(50.),

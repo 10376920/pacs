@@ -5,6 +5,7 @@
 #include "readParameters.hpp"
 #include "GetPot.hpp"
 #include "gnuplot-iostream.hpp"// interface with gnuplot
+#include "tridiagonal.hpp"
 /*!
   @file main.cpp
   @brief Temperature distribution in a 1D bar.
@@ -51,8 +52,6 @@ int main(int argc, char** argv)
   // Transfer parameters to local variables
   // I use references to save memory (not really an issue here, it is just
   // to show a possible  use of references)
-  const int&    itermax= param.itermax;   //max number of iteration for Gauss-Siedel
-  const double& toler=param.toler;   // Tolerance for stopping criterion
   // Here I use auto (remember that you need const and & if you want constant references)
   const auto& L= param.L;  // Bar length
   const auto& a1=param.a1; // First longitudinal dimension
@@ -72,47 +71,22 @@ int main(int argc, char** argv)
   // Solution vector
   std::vector<double> theta(M+1);
   
-  // Gauss Siedel is initialised with a linear variation
-  // of T
+  std::vector<double> a(M-1,-1.0);
+  std::vector<double> diag(M-1,2.0+h*h*act);
+  diag.push_back(1.0);
+  tridiagonalMatrix A(M, diag, a, a);
+  A.thomasFactorize();
   
-  for(unsigned int m=0;m <= M;++m)
-     theta[m]=(1.-m*h)*(To-Te)/Te;
+  std::vector<double> b(M,0.0);
+  b[0] = (To - Te)/Te;
+  auto x = A.thomasSolve(b);
   
-  // Gauss-Seidel
-  // epsilon=||x^{k+1}-x^{k}||
-  // Stopping criteria epsilon<=toler
+  theta[0] = (To - Te)/Te;
+  for (int i = 0; i<x.size(); ++i) {
+    theta[i+1] = x[i];
+  }
   
-  int iter=0;
-  double xnew, epsilon;
-     do
-       { epsilon=0.;
-
-	 // first M-1 row of linear system
-         for(int m=1;m < M;m++)
-         {   
-	   xnew  = (theta[m-1]+theta[m+1])/(2.+h*h*act);
-	   epsilon += (xnew-theta[m])*(xnew-theta[m]);
-	   theta[m] = xnew;
-         }
-
-	 //Last row
-	 xnew = theta[M-1]; 
-	 epsilon += (xnew-theta[M])*(xnew-theta[M]);
-	 theta[M]=  xnew; 
-
-	 iter=iter+1;     
-       }while((sqrt(epsilon) > toler) && (iter < itermax) );
-
-    if(iter<itermax)
-      cout << "M="<<M<<"  Convergence in "<<iter<<" iterations"<<endl;
-    else
-      {
-	cerr << "NOT CONVERGING in "<<itermax<<" iterations "<<
-	  "||dx||="<<sqrt(epsilon)<<endl;
-	status=1;
-      }
-
- // Analitic solution
+  // Analitic solution
 
     vector<double> thetaa(M+1);
      for(int m=0;m <= M;m++)
